@@ -10,7 +10,7 @@ diffout=$(diff $oldfile $newfile)
 
 if [ -n "$diffout" ]; then
 	iptables-save > $savefile
-	printf "diff output:\n$diffout" | mail -s "iptables autosave: $(cat /etc/hostname): saved new iptables rules" root@localhost
+	printf "diff output:\n$diffout" | mail -s "iptables autosave: $(cat /etc/hostname): saved new iptables rules" root
 fi
 
 rm $newfile $oldfile
