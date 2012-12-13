@@ -3,14 +3,18 @@
 savefile="/etc/iptables/rules"
 oldfile=$(mktemp)
 newfile=$(mktemp)
+tmpfile=$(mktemp)
 
-cat $savefile | sed -e "/^#.*/ d" -e "s/\[[0-9:]*\]//" > $oldfile
-iptables-save | sed -e "/^#.*/ d" -e "s/\[[0-9:]*\]//" > $newfile
-diffout=$(diff $oldfile $newfile)
+trap 'rm $newfile $oldfile $tmpfile' EXIT
 
-if [ -n "$diffout" ]; then
-	iptables-save > $savefile
-	printf "diff output:\n$diffout" | mail -s "iptables autosave: $(cat /etc/hostname): saved new iptables rules" root
+cat $savefile | sed -e "/^#.*/ d" -e "/^:.*/ s/\[[0-9:]*\]//" > $oldfile
+iptables-save | sed -e "/^#.*/ d" -e "/^:.*/ s/\[[0-9:]*\]//" > $newfile
+
+if [ -n "$(cmp $oldfile $newfile)" ]; then
+	iptables-save > $tmpfile
+	mv $savefile $savefile.bak
+	mv $tmpfile $savefile
+	diff $oldfile $newfile | mail -s "iptables autosave: $(cat /etc/hostname): saved new iptables rules" root
 fi
 
-rm $newfile $oldfile
+exit
